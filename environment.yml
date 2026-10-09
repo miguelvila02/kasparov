@@ -1,0 +1,10 @@
+name: kasparov
+channels:
+  - conda-forge
+dependencies:
+  - rust                              # rustc, cargo
+  - rust-std-wasm32-unknown-unknown   # standard library for the WebAssembly target
+  - nodejs>=22                        # Vite + React
+  - binaryen                          # wasm-opt (used by wasm-pack in release builds)
+  - c-compiler                        # linker / C toolchain some Rust crates need
+  - git
