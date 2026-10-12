@@ -6,12 +6,23 @@ use engine::types::Color;
 use std::io::{self, BufRead, Write};
 use std::time::Instant;
 
+/// Fixed positions for the benchmark (the perft test positions).
+const BENCH_FENS: [&str; 6] = [
+    START_FEN,
+    "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1",
+    "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1",
+    "r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1",
+    "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8",
+    "r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10",
+];
+
 fn main() {
     let args: Vec<String> = std::env::args().collect();
     match args.get(1).map(String::as_str) {
         Some("perft") => run_perft(&args),
         Some("eval") => run_eval(&args),
         Some("search") => run_search(&args),
+        Some("bench") => run_bench(&args),
         _ => run_uci(),
     }
 }
@@ -54,14 +65,47 @@ fn run_search(args: &[String]) {
     println!(
         "bestmove {}  score {:+}  depth {}  nodes {}  time {:.0}ms  ({:.0} nodes/s)",
         r.best_move.map(|m| m.to_uci()).unwrap_or("none".into()),
-        r.score, r.depth, r.nodes, r.time_ms,
+        r.score,
+        r.depth,
+        r.nodes,
+        r.time_ms,
         r.nodes as f64 / (r.time_ms / 1000.0).max(0.001)
     );
     println!("pv {}", pv.join(" "));
 }
 
+/// engine-uci bench [depth]
+/// Searches fixed positions to a fixed depth. The total node count is a "fingerprint":
+/// it only changes when the search behaves differently, so a change that should only
+/// make the engine faster must keep the same number.
+fn run_bench(args: &[String]) {
+    let depth: u32 = args.get(2).and_then(|d| d.parse().ok()).unwrap_or(8);
+    let mut total_nodes = 0u64;
+    let mut total_ms = 0.0;
+    for fen in BENCH_FENS {
+        let pos = Position::from_fen(fen).expect("invalid FEN");
+        let r = Searcher::new(vec![]).search(&pos, SearchLimits { time_ms: f64::INFINITY, max_depth: depth });
+        println!(
+            "{:<8} depth {:>2}  score {:+6}  nodes {:>10}",
+            r.best_move.map(|m| m.to_uci()).unwrap_or("none".into()),
+            r.depth,
+            r.score,
+            r.nodes
+        );
+        total_nodes += r.nodes;
+        total_ms += r.time_ms;
+    }
+    println!(
+        "\nBench: {total_nodes} nodes  {:.2}s  {:.0} nodes/s",
+        total_ms / 1000.0,
+        total_nodes as f64 / (total_ms / 1000.0).max(0.001)
+    );
+}
+
 fn run_uci() {
     let mut game = Game::new(Position::start());
+    // One searcher for the whole session, so the transposition table carries over between moves
+    let mut searcher = Searcher::new(vec![]);
     let stdin = io::stdin();
     for line in stdin.lock().lines() {
         let Ok(line) = line else { break };
@@ -72,7 +116,10 @@ fn run_uci() {
                 println!("uciok");
             }
             Some("isready") => println!("readyok"),
-            Some("ucinewgame") => game = Game::new(Position::start()),
+            Some("ucinewgame") => {
+                game = Game::new(Position::start());
+                searcher.clear();
+            }
             Some("position") => {
                 if let Some(g) = parse_position(&line) {
                     game = g;
@@ -81,11 +128,16 @@ fn run_uci() {
             Some("go") => {
                 let pos = *game.current();
                 let limits = parse_go(&line, pos.side == Color::White);
-                let r = Searcher::new(game.history_hashes()).search(&pos, limits);
+                searcher.set_history(game.history_hashes());
+                let r = searcher.search(&pos, limits);
                 let pv: Vec<String> = r.pv.iter().map(|m| m.to_uci()).collect();
                 println!(
                     "info depth {} score cp {} nodes {} time {:.0} pv {}",
-                    r.depth, r.score, r.nodes, r.time_ms, pv.join(" ")
+                    r.depth,
+                    r.score,
+                    r.nodes,
+                    r.time_ms,
+                    pv.join(" ")
                 );
                 match r.best_move {
                     Some(m) => println!("bestmove {}", m.to_uci()),

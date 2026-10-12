@@ -78,4 +78,17 @@ impl Position {
         p.hash ^= ZOBRIST.side;
         p
     }
+    
+    /// "Passes" the turn: same pieces, other side to move. Only used inside the search.
+    pub fn make_null_move(&self) -> Position {
+        let mut p = *self;
+        if let Some(e) = p.ep {
+            p.hash ^= ZOBRIST.ep_file[file_of(e) as usize];
+        }
+        p.ep = None;
+        p.side = p.side.flip();
+        p.hash ^= ZOBRIST.side;
+        p.halfmove = 0; // a null move breaks any repetition chain
+        p
+    }
 }

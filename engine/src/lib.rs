@@ -7,6 +7,7 @@ pub mod perft;
 pub mod search;
 pub mod time;
 pub mod types;
+pub mod tt;
 
 
 
