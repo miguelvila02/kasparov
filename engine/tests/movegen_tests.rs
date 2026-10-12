@@ -9,6 +9,11 @@ fn check(fen: &str, expected: &[u64]) {
     }
 }
 
+fn san(fen: &str, uci: &str) -> String {
+    let p = Position::from_fen(fen).unwrap();
+    p.san(p.parse_uci(uci).unwrap())
+}
+
 const KIWIPETE: &str = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1";
 const POS3: &str = "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1";
 const POS4: &str = "r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1";
@@ -64,4 +69,23 @@ fn rejects_illegal_moves() {
     assert!(pos.parse_uci("e2e5").is_none()); // pawn can't move 3 squares
     assert!(pos.parse_uci("e1g1").is_none()); // can't castle through pieces
     assert!(pos.parse_uci("f1c4").is_none()); // bishop is blocked
+}
+
+#[test]
+fn san_notation() {
+    assert_eq!(san(START_FEN, "e2e4"), "e4");
+    assert_eq!(san(START_FEN, "g1f3"), "Nf3");
+    // Two knights can reach d2: name the one moving
+    assert_eq!(san("4k3/8/8/8/8/8/8/1N2KN2 w - - 0 1", "b1d2"), "Nbd2");
+    // Promotion that gives check down the a-file
+    assert_eq!(san("8/P7/8/8/8/8/8/k6K w - - 0 1", "a7a8q"), "a8=Q+");
+    // Fool's mate
+    assert_eq!(
+        san("rnbqkbnr/pppp1ppp/8/4p3/6P1/5P2/PPPPP2P/RNBQKBNR b KQkq - 0 2", "d8h4"),
+        "Qh4#"
+    );
+    assert_eq!(
+        san("r1bqk2r/pppp1ppp/2n2n2/2b1p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4", "e1g1"),
+        "O-O"
+    );
 }

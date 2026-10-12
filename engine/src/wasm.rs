@@ -93,4 +93,11 @@ impl WasmGame {
     pub fn evaluation(&self) -> i32 {
         crate::eval::breakdown(self.game.current()).total
     }
+
+    /// SAN for a UCI move in the current position (call it BEFORE playing the move).
+    pub fn san(&self, uci: &str) -> Option<String> {
+        let pos = self.game.current();
+        let m = pos.parse_uci(uci)?;
+        Some(pos.san(m))
+    }
 }

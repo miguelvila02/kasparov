@@ -4,4 +4,5 @@ import react from "@vitejs/plugin-react";
 export default defineConfig({
   plugins: [react()],
   server: { fs: { allow: [".."] } },
+  worker: { format: "es" }, // the engine worker uses ES module imports
 });
