@@ -85,6 +85,23 @@ impl Position {
         }
         h
     }
+    /// The same position with the board flipped vertically and colors swapped.
+    pub fn mirrored(&self) -> Position {
+        let mut m = Position::empty();
+        for s in 0..64u8 {
+            if let Some((c, p)) = self.board[s as usize] {
+                m.put(c.flip(), p, s ^ 56);
+            }
+        }
+        m.side = self.side.flip();
+        // White's rights (bits 0-1) become Black's (bits 2-3) and vice versa
+        m.castling = ((self.castling & (WK | WQ)) << 2) | ((self.castling & (BK | BQ)) >> 2);
+        m.ep = self.ep.map(|e| e ^ 56);
+        m.halfmove = self.halfmove;
+        m.fullmove = self.fullmove;
+        m.hash = m.compute_hash();
+        m
+    }
 }
 
 /// Impressão ASCII, essencial para depurar.

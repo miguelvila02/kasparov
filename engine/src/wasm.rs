@@ -55,4 +55,15 @@ impl WasmGame {
         }
         .to_string()
     }
+    /// The bot picks and plays a move. Returns it in UCI format, or None if the game is over.
+    pub fn bot_move(&mut self, seed: u32) -> Option<String> {
+        let m = crate::search::greedy_move(self.game.current(), seed)?;
+        self.game.play(m);
+        Some(m.to_uci())
+    }
+
+    /// Evaluation from White's point of view, in centipawns.
+    pub fn evaluation(&self) -> i32 {
+        crate::eval::breakdown(self.game.current()).total
+    }
 }

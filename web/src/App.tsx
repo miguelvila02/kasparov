@@ -16,9 +16,11 @@ const STATUS_TEXT: Record<string, string> = {
 
 export default function App() {
   const game = useRef<WasmGame | null>(null);
+  const botTimer = useRef<number | null>(null);
   const [fen, setFen] = useState("");
   const [status, setStatus] = useState("ongoing");
   const [pendingPromotion, setPendingPromotion] = useState<string | null>(null);
+  const [evalCp, setEvalCp] = useState(0);
 
 
   useEffect(() => {
@@ -32,28 +34,24 @@ export default function App() {
     const g = game.current!;
     setFen(g.fen());
     setStatus(g.status());
+    setEvalCp(g.evaluation());
   }
 
   function botMove() {
     const g = game.current;
-    console.log("botMove called", g?.status(), g?.side_to_move());
-    if (!g || g.status() !== "ongoing") return;
-
-    try {
-      const moves = g.legal_moves();
-      console.log("bot legal moves:", moves);
-      const m = moves[Math.floor(Math.random() * moves.length)];
-      const ok = g.play(m);
-      console.log("bot played", m, ok);
-      sync();
-    } catch (e) {
-      console.error("botMove failed:", e);
-    }
+    // Only move if the game is on and it's actually the bot's turn (Black)
+    if (!g || g.status() !== "ongoing" || g.side_to_move() !== "b") return;
+    g.bot_move(Math.floor(Math.random() * 2 ** 32));
+    sync();
   }
 
   function afterUserMove() {
     sync();
-    setTimeout(botMove, 500);
+    if (botTimer.current !== null) return; // already scheduled
+    botTimer.current = window.setTimeout(() => {
+      botTimer.current = null;
+      botMove();
+    }, 500);
   }
 
   function onPieceDrop({
@@ -82,6 +80,7 @@ export default function App() {
     return true;
   }
 
+
   function choosePromotion(piece: "q" | "r" | "b" | "n") {
     const g = game.current;
     if (!g || !pendingPromotion) return;
@@ -91,6 +90,10 @@ export default function App() {
   }
 
   function newGame() {
+    if (botTimer.current !== null) {
+      clearTimeout(botTimer.current);
+      botTimer.current = null;
+    }
     game.current?.free();
     game.current = new WasmGame();
     setPendingPromotion(null);
@@ -154,6 +157,7 @@ export default function App() {
       </div>
 
       <p>{STATUS_TEXT[status] ?? (game.current?.side_to_move() === "w" ? "Your move" : "Bot is moving…")}</p>
+      <p>Evaluation: {evalCp >= 0 ? "+" : ""}{(evalCp / 100).toFixed(2)}</p>
       <button onClick={newGame}>New game</button>
     </div>
   );

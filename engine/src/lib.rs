@@ -4,6 +4,8 @@ pub mod movegen;
 pub mod moves;
 pub mod perft;
 pub mod types;
+pub mod eval;
+pub mod search;
 
 
 
