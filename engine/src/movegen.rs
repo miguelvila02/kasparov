@@ -25,6 +25,9 @@ impl MoveList {
     pub fn iter(&self) -> std::slice::Iter<'_, Move> {
         self.moves[..self.len].iter()
     }
+    pub fn as_mut_slice(&mut self) -> &mut [Move] {
+        &mut self.moves[..self.len]
+    }
 }
 
 fn push_promotions(list: &mut MoveList, from: Square, to: Square, capture: bool) {

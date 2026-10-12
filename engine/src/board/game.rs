@@ -65,6 +65,10 @@ impl Game {
             GameStatus::Ongoing
         }
     }
+    /// Hashes of every position before the current one, oldest first.
+    pub fn history_hashes(&self) -> Vec<u64> {
+        self.stack[..self.stack.len() - 1].iter().map(|p| p.hash).collect()
+    }
 }
 
 

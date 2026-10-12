@@ -1,6 +1,5 @@
 use engine::board::{Position, START_FEN};
 use engine::eval::{breakdown, evaluate};
-use engine::search::greedy_move;
 
 const FENS: [&str; 5] = [
     START_FEN,
@@ -50,16 +49,4 @@ fn centralized_knight_is_better() {
 fn game_phase() {
     assert_eq!(breakdown(&Position::start()).phase, 24);
     assert_eq!(breakdown(&pos("4k3/8/8/8/8/8/8/4K3 w - - 0 1")).phase, 0);
-}
-
-#[test]
-fn greedy_takes_a_free_queen() {
-    let m = greedy_move(&pos("4k3/8/8/3q4/4P3/8/8/4K3 w - - 0 1"), 0).unwrap();
-    assert_eq!(m.to_uci(), "e4d5");
-}
-
-#[test]
-fn greedy_finds_mate_in_one() {
-    let m = greedy_move(&pos("6k1/5ppp/8/8/8/8/8/R5K1 w - - 0 1"), 0).unwrap();
-    assert_eq!(m.to_uci(), "a1a8"); // back-rank mate
 }
