@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import init, { WasmGame } from "engine";
 import { Chessboard } from "react-chessboard";
-import type { SearchRequest, SearchResponse } from "./engine.worker";
+import type { SearchRequest, SearchResponse, Verdict } from "./engine.worker";
 import { WHITE_OPENINGS } from "./openings";
 import type { BookLine, Opening } from "./openings";
 import { bookLines, isInBook, lastBookMove, openingName, pickBookMove } from "./book";
@@ -17,7 +17,9 @@ const START_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
 type Side = "w" | "b";
 type Screen = "menu" | "openings" | "game";
-type Note = { id: number; kind: "book" | "info" | "warn"; text: string };
+type NoteKind = "book" | "info" | "warn" | "engine" | "inaccuracy" | "mistake" | "blunder";
+type Note = { id: number; kind: NoteKind; text: string };
+type Arrow = { startSquare: string; endSquare: string; color: string };
 
 function createWorker() {
   return new Worker(new URL("./engine.worker.ts", import.meta.url), { type: "module" });
@@ -58,11 +60,26 @@ function moveLabel(ply: number, san: string) {
 
 const LAST_MOVE: CSSProperties = { background: "rgba(255, 213, 79, 0.45)" };
 
-const NOTE_COLORS: Record<Note["kind"], string> = {
+const NOTE_COLORS: Record<NoteKind, string> = {
   book: "#3b82f6",
   info: "#9ca3af",
   warn: "#f59e0b",
+  engine: "#10b981",
+  inaccuracy: "#eab308",
+  mistake: "#f97316",
+  blunder: "#ef4444",
 };
+
+/** Symbol shown next to a move in the move list. */
+const MARKS: Partial<Record<Verdict, string>> = {
+  best: " ✓",
+  inaccuracy: "?!",
+  mistake: "?",
+  blunder: "??",
+};
+
+// Plan arrows: the bot's move, the reply it expects, and its follow-up
+const ARROW_COLORS = ["rgba(37, 99, 235, 0.85)", "rgba(234, 88, 12, 0.75)", "rgba(37, 99, 235, 0.4)"];
 
 // ---------- The component ----------
 
@@ -82,6 +99,8 @@ export default function App() {
   const inBookRef = useRef(false);
   const chosenOpeningRef = useRef<Opening | null>(null);
   const noteId = useRef(0);
+  // Was the user's last move a book move? (Book moves are explained, not reviewed.)
+  const lastUserMoveWasBook = useRef(false);
 
   // State: what's drawn on the screen
   const [engineLoaded, setEngineLoaded] = useState(false);
@@ -98,6 +117,9 @@ export default function App() {
   const [chosenOpening, setChosenOpening] = useState<Opening | null>(null);
   const [positionName, setPositionName] = useState<string | null>(null);
   const [notes, setNotes] = useState<Note[]>([]);
+  const [marks, setMarks] = useState<Record<number, string>>({});
+  const [arrows, setArrows] = useState<Arrow[]>([]);
+  const [showPlan, setShowPlan] = useState(true);
 
   useEffect(() => {
     engineReady.then(() => setEngineLoaded(true));
@@ -115,7 +137,7 @@ export default function App() {
     notesRef.current?.scrollTo({ top: notesRef.current.scrollHeight });
   }, [notes]);
 
-  function addNote(kind: Note["kind"], text: string) {
+  function addNote(kind: NoteKind, text: string) {
     const id = ++noteId.current;
     setNotes((prev) => [...prev, { id, kind, text }]);
   }
@@ -172,6 +194,7 @@ export default function App() {
           if (applyMove(choice.uci)) {
             addNote("book", `${moveLabel(ply, choice.san)} (book) ${choice.idea}`);
             setInfo(`Book move · ${choice.lineName}`);
+            setArrows([{ startSquare: choice.uci.slice(0, 2), endSquare: choice.uci.slice(2, 4), color: ARROW_COLORS[0] }]);
           }
           setThinking(false);
         }, delay);
@@ -184,14 +207,18 @@ export default function App() {
       }
     }
 
-    // 2. Engine search in the worker: 1–5 s of real thinking
+    // 2. Engine search in the worker: 1–5 s in total, including the review of the user's move
     const delay = 1000 + Math.random() * 4000;
+    const review = movesRef.current.length > 0 && !lastUserMoveWasBook.current;
+    const reviewMs = review ? Math.min(500, Math.max(150, delay * 0.15)) : 0;
     pending.current = { id, delay, sentAt: performance.now(), kind: "search" };
     const req: SearchRequest = {
       id,
       startFen: START_FEN,
       moves: [...movesRef.current],
-      timeMs: Math.max(100, delay - 250),
+      timeMs: Math.max(150, delay - 250 - 3 * reviewMs),
+      review,
+      reviewMs,
     };
     getWorker().postMessage(req);
   }
@@ -205,7 +232,22 @@ export default function App() {
     botTimer.current = window.setTimeout(() => {
       botTimer.current = null;
       pending.current = null;
-      if (res.move) applyMove(res.move);
+
+      // 1. Review of the user's move (only errors get a note; the best move gets a ✓)
+      const userPly = movesRef.current.length - 1;
+      if (res.review && userPly >= 0) {
+        const mark = MARKS[res.review.verdict];
+        if (mark) setMarks((prev) => ({ ...prev, [userPly]: mark }));
+        if (res.review.verdict === "inaccuracy" || res.review.verdict === "mistake" || res.review.verdict === "blunder") {
+          addNote(res.review.verdict, res.review.text);
+        }
+      }
+
+      // 2. The bot's move and its explanation
+      if (res.move && applyMove(res.move)) {
+        if (res.explanation) addNote("engine", res.explanation);
+        setArrows(res.arrows.map(([from, to], i) => ({ startSquare: from, endSquare: to, color: ARROW_COLORS[i] ?? ARROW_COLORS[2] })));
+      }
       setInfo(`Depth ${res.depth} · ${res.nodes.toLocaleString()} positions · ${formatScore(res.score)}`);
       setThinking(false);
     }, remaining);
@@ -240,6 +282,7 @@ export default function App() {
 
   /** After the user's move: explain it if it's theory, or announce leaving the book. */
   function checkUserMoveAgainstBook(san: string) {
+    lastUserMoveWasBook.current = false;
     if (!inBookRef.current) return;
     const played = movesRef.current;
     const ply = played.length - 1;
@@ -247,7 +290,10 @@ export default function App() {
 
     if (isInBook(bookRef.current, played)) {
       const m = lastBookMove(bookRef.current, played);
-      if (m) addNote("book", `${moveLabel(ply, m.san)} (book) ${m.idea}`);
+      if (m) {
+        addNote("book", `${moveLabel(ply, m.san)} (book) ${m.idea}`);
+        lastUserMoveWasBook.current = true;
+      }
       return;
     }
 
@@ -277,6 +323,7 @@ export default function App() {
     bookRef.current = bookLines(opening);
     inBookRef.current = true;
     noteId.current = 0;
+    lastUserMoveWasBook.current = false;
 
     setUserSide(side);
     setChosenOpening(opening);
@@ -285,6 +332,8 @@ export default function App() {
     setPendingPromotion(null);
     setInfo("");
     setPositionName(null);
+    setMarks({});
+    setArrows([]);
     setNotes(
       opening
         ? [{ id: 0, kind: "info", text: `The bot will play the ${opening.name} (${opening.firstMoves}). ${opening.description}` }]
@@ -327,6 +376,7 @@ export default function App() {
     if (!legal.includes(uci)) return false; // illegal: snap back
     const san = g.san(uci) ?? uci;
     if (!applyMove(uci)) return false;
+    setArrows([]);
     checkUserMoveAgainstBook(san);
     requestBotMove();
     return true;
@@ -340,6 +390,7 @@ export default function App() {
     const ok = applyMove(uci);
     setPendingPromotion(null);
     if (ok) {
+      setArrows([]);
       checkUserMoveAgainstBook(san);
       requestBotMove();
     }
@@ -434,8 +485,9 @@ export default function App() {
       ? ([["q", "♕", "Queen"], ["r", "♖", "Rook"], ["b", "♗", "Bishop"], ["n", "♘", "Knight"]] as const)
       : ([["q", "♛", "Queen"], ["r", "♜", "Rook"], ["b", "♝", "Bishop"], ["n", "♞", "Knight"]] as const);
 
+  const withMark = (i: number) => (sanList[i] === undefined ? undefined : sanList[i] + (marks[i] ?? ""));
   const rows: [number, string, string | undefined][] = [];
-  for (let i = 0; i < sanList.length; i += 2) rows.push([i / 2 + 1, sanList[i], sanList[i + 1]]);
+  for (let i = 0; i < sanList.length; i += 2) rows.push([i / 2 + 1, withMark(i)!, withMark(i + 1)]);
 
   const box: CSSProperties = {
     border: "1px solid rgba(128, 128, 128, 0.35)",
@@ -465,6 +517,7 @@ export default function App() {
             onPieceDrop,
             boardOrientation: userSide === "w" ? "white" : "black",
             squareStyles,
+            arrows: showPlan ? arrows : [],
           }}
         />
 
@@ -510,7 +563,7 @@ export default function App() {
       </div>
 
       {/* Side panel */}
-      <div style={{ width: 320, maxWidth: "100%", display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ width: 320, maxWidth: "100%", display: "flex", flexDirection: "column", gap: 12, textAlign: "left" }}>
         <div>
           <div style={{ fontSize: 13, opacity: 0.6 }}>
             You play {userSide === "w" ? "White" : "Black"}
@@ -527,6 +580,16 @@ export default function App() {
         )}
         <div style={{ fontSize: 14 }}>Evaluation: {formatScore(evalCp)}</div>
         {info && <div style={{ fontSize: 13, opacity: 0.7 }}>Bot: {info}</div>}
+        <div style={{ fontSize: 13 }}>
+          <label style={{ display: "flex", gap: 6, alignItems: "center", cursor: "pointer" }}>
+            <input type="checkbox" checked={showPlan} onChange={(e) => setShowPlan(e.target.checked)} />
+            Show the bot's plan on the board
+          </label>
+          <div style={{ marginLeft: 22, opacity: 0.85 }}>
+            <span style={{ color: ARROW_COLORS[0] }}>■</span> its move · <span style={{ color: ARROW_COLORS[1] }}>■</span>{" "}
+            the reply it expects
+          </div>
+        </div>
 
         <div ref={listRef} style={{ ...box, maxHeight: 200, fontFamily: "monospace", fontSize: 15 }}>
           {rows.length === 0 && <div style={{ opacity: 0.5 }}>No moves yet</div>}
@@ -541,7 +604,7 @@ export default function App() {
 
         <div>
           <div style={{ fontSize: 13, opacity: 0.6, marginBottom: 4 }}>Coach</div>
-          <div ref={notesRef} style={{ ...box, maxHeight: 220, display: "flex", flexDirection: "column", gap: 8 }}>
+          <div ref={notesRef} style={{ ...box, maxHeight: 300, display: "flex", flexDirection: "column", gap: 8 }}>
             {notes.length === 0 && <div style={{ opacity: 0.5, fontSize: 14 }}>Notes about the moves appear here.</div>}
             {notes.map((n) => (
               <div

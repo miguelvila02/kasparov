@@ -23,6 +23,7 @@ fn main() {
         Some("eval") => run_eval(&args),
         Some("search") => run_search(&args),
         Some("bench") => run_bench(&args),
+        Some("coach") => run_coach(&args),
         Some("datagen") => run_datagen(&args),
         Some("tune") => run_tune(&args),
         _ => run_uci(),
@@ -127,6 +128,34 @@ fn run_tune(args: &[String]) {
     let out = args.get(5).map(String::as_str).unwrap_or("src/eval/params.rs");
     let tune_all = args.iter().any(|a| a == "--all");
     engine::tune::run(data, epochs, threads, out, tune_all);
+}
+
+/// engine-uci coach <ms> <fen> [user move that led to this position, e.g. e2e4] [fen before it]
+/// Plays one bot turn from <fen> and prints the explanation (and the review of the user's move).
+fn run_coach(args: &[String]) {
+    let ms: f64 = args.get(2).and_then(|v| v.parse().ok()).unwrap_or(1000.0);
+    let fen = args.get(3).map(String::as_str).unwrap_or(START_FEN);
+    let (mut game, user_move) = match (args.get(4), args.get(5)) {
+        (Some(uci), Some(before_fen)) => {
+            let before = Position::from_fen(before_fen).expect("invalid FEN");
+            let m = before.parse_uci(uci).expect("illegal user move");
+            let mut g = Game::new(before);
+            g.play(m);
+            (g, Some(m))
+        }
+        _ => (Game::new(Position::from_fen(fen).expect("invalid FEN")), None),
+    };
+    let moves: Vec<_> = user_move.into_iter().collect();
+    match engine::explain::bot_turn(&mut game, &moves, user_move.is_some(), ms * 0.25, ms) {
+        Some(t) => {
+            if let Some(r) = &t.review {
+                println!("[{}] {}", r.verdict.as_str(), r.text);
+            }
+            println!("[bot] {}", t.explanation);
+            println!("depth {} nodes {} score(White) {:+}", t.depth, t.nodes, t.score_white);
+        }
+        None => println!("no legal moves"),
+    }
 }
 
 fn run_uci() {

@@ -8,7 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "engine": "cd ../engine && cargo check --target wasm32-unknown-unknown && wasm-pack build --target web --release && cd ../web && npm install ../engine/pkg"
+    "engine": "cd ../engine && cargo check --lib --target wasm32-unknown-unknown && wasm-pack build --target web --release && cd ../web && npm install ../engine/pkg"
   },
   "dependencies": {
     "engine": "file:../engine/pkg",
