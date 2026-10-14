@@ -23,6 +23,8 @@ fn main() {
         Some("eval") => run_eval(&args),
         Some("search") => run_search(&args),
         Some("bench") => run_bench(&args),
+        Some("datagen") => run_datagen(&args),
+        Some("tune") => run_tune(&args),
         _ => run_uci(),
     }
 }
@@ -50,6 +52,10 @@ fn run_eval(args: &[String]) {
     println!("Material:       {:+}", b.material);
     println!("Piece-squares:  {:+}", b.piece_squares);
     println!("Bishop pair:    {:+}", b.bishop_pair);
+    println!("Pawn structure: {:+}", b.pawn_structure);
+    println!("Mobility:       {:+}", b.mobility);
+    println!("Rooks:          {:+}", b.rooks);
+    println!("King safety:    {:+}", b.king_safety);
     println!("-----------------------");
     println!("Total (White):  {:+}  ({:+.2} pawns)", b.total, b.total as f64 / 100.0);
 }
@@ -100,6 +106,27 @@ fn run_bench(args: &[String]) {
         total_ms / 1000.0,
         total_nodes as f64 / (total_ms / 1000.0).max(0.001)
     );
+}
+
+/// engine-uci datagen <games> <threads> <depth> [output file] [opening book]
+fn run_datagen(args: &[String]) {
+    let games: usize = args.get(2).and_then(|v| v.parse().ok()).unwrap_or(2000);
+    let threads: usize = args.get(3).and_then(|v| v.parse().ok()).unwrap_or(3);
+    let depth: u32 = args.get(4).and_then(|v| v.parse().ok()).unwrap_or(6);
+    let out = args.get(5).map(String::as_str).unwrap_or("data/positions.txt");
+    let book = args.get(6).map(String::as_str);
+    engine::datagen::run(games, threads, depth, out, book);
+}
+
+/// engine-uci tune <data file> [epochs] [threads] [output file] [--all]
+/// Without --all, only the new terms are tuned; PeSTO material and tables stay fixed.
+fn run_tune(args: &[String]) {
+    let data = args.get(2).map(String::as_str).unwrap_or("data/positions.txt");
+    let epochs: usize = args.get(3).and_then(|v| v.parse().ok()).unwrap_or(500);
+    let threads: usize = args.get(4).and_then(|v| v.parse().ok()).unwrap_or(3);
+    let out = args.get(5).map(String::as_str).unwrap_or("src/eval/params.rs");
+    let tune_all = args.iter().any(|a| a == "--all");
+    engine::tune::run(data, epochs, threads, out, tune_all);
 }
 
 fn run_uci() {

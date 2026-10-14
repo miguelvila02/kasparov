@@ -13,3 +13,7 @@ pub mod tt;
 
 #[cfg(target_arch = "wasm32")]
 mod wasm;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod datagen;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod tune;

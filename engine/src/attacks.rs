@@ -59,30 +59,68 @@ pub static PAWN_ATTACKS: [[u64; 64]; 2] = {
     t
 };
 
-fn slide(s: Square, occ: Bitboard, dirs: &[(i8, i8)]) -> Bitboard {
-    let mut attacks = 0;
-    let (f0, r0) = (file_of(s) as i8, rank_of(s) as i8);
-    for &(df, dr) in dirs {
-        let (mut f, mut r) = (f0 + df, r0 + dr);
-        while (0..8).contains(&f) && (0..8).contains(&r) {
-            let t = sq(f as u8, r as u8);
-            attacks |= bit(t);
-            if occ & bit(t) != 0 {
-                break; // blocked
-            }
-            f += df;
-            r += dr;
-        }
+// ---------- Sliding pieces: precomputed rays ----------
+// For each square and each of the 8 directions, all squares from there to the
+// board edge. To get the attacks in one direction: take the ray, find the first
+// blocker on it, and cut the ray off behind that blocker (by XOR-ing away the
+// blocker's own ray in the same direction).
+
+const DIRS: [(i8, i8); 8] = [(0, 1), (1, 1), (1, 0), (1, -1), (0, -1), (-1, -1), (-1, 0), (-1, 1)];
+
+const fn ray(sq: usize, df: i8, dr: i8) -> u64 {
+    let mut r = 0u64;
+    let mut f = (sq % 8) as i8 + df;
+    let mut k = (sq / 8) as i8 + dr;
+    while f >= 0 && f < 8 && k >= 0 && k < 8 {
+        r |= 1u64 << (k * 8 + f);
+        f += df;
+        k += dr;
     }
-    attacks
+    r
+}
+
+static RAYS: [[u64; 64]; 8] = {
+    let mut t = [[0u64; 64]; 8];
+    let mut d = 0;
+    while d < 8 {
+        let mut s = 0;
+        while s < 64 {
+            t[d][s] = ray(s, DIRS[d].0, DIRS[d].1);
+            s += 1;
+        }
+        d += 1;
+    }
+    t
+};
+
+/// Does direction `d` increase the square number? Then the first blocker on the
+/// ray is its lowest set bit; otherwise its highest.
+const fn is_up(d: usize) -> bool {
+    let (df, dr) = DIRS[d];
+    dr > 0 || (dr == 0 && df > 0)
+}
+
+#[inline]
+fn ray_attacks(d: usize, s: Square, occ: Bitboard) -> Bitboard {
+    let r = RAYS[d][s as usize];
+    let blockers = r & occ;
+    if blockers == 0 {
+        return r;
+    }
+    let first = if is_up(d) {
+        blockers.trailing_zeros() as usize
+    } else {
+        63 - blockers.leading_zeros() as usize
+    };
+    r ^ RAYS[d][first]
 }
 
 pub fn bishop_attacks(s: Square, occ: Bitboard) -> Bitboard {
-    slide(s, occ, &[(1, 1), (1, -1), (-1, 1), (-1, -1)])
+    ray_attacks(1, s, occ) | ray_attacks(3, s, occ) | ray_attacks(5, s, occ) | ray_attacks(7, s, occ)
 }
 
 pub fn rook_attacks(s: Square, occ: Bitboard) -> Bitboard {
-    slide(s, occ, &[(1, 0), (-1, 0), (0, 1), (0, -1)])
+    ray_attacks(0, s, occ) | ray_attacks(2, s, occ) | ray_attacks(4, s, occ) | ray_attacks(6, s, occ)
 }
 
 impl Position {
