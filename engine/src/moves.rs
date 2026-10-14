@@ -126,4 +126,11 @@ impl Position {
         }
         s
     }
+
+    /// Finds the legal move with this SAN ("Nf3", "exd5", "O-O", "e8=Q+"). Check marks are optional.
+    pub fn parse_san(&self, san: &str) -> Option<Move> {
+        let clean = |x: &str| x.trim_end_matches(['+', '#', '!', '?']).replace('0', "O");
+        let want = clean(san);
+        self.legal_moves().iter().copied().find(|&m| clean(&self.san(m)) == want)
+    }
 }

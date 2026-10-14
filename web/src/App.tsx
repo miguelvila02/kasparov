@@ -3,6 +3,9 @@ import type { CSSProperties } from "react";
 import init, { WasmGame } from "engine";
 import { Chessboard } from "react-chessboard";
 import type { SearchRequest, SearchResponse } from "./engine.worker";
+import { WHITE_OPENINGS } from "./openings";
+import type { BookLine, Opening } from "./openings";
+import { bookLines, isInBook, lastBookMove, openingName, pickBookMove } from "./book";
 
 // ---------- Outside the component: constants and plain helpers (no hooks here) ----------
 
@@ -13,7 +16,8 @@ const engineReady = init();
 const START_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
 type Side = "w" | "b";
-type Screen = "menu" | "game";
+type Screen = "menu" | "openings" | "game";
+type Note = { id: number; kind: "book" | "info" | "warn"; text: string };
 
 function createWorker() {
   return new Worker(new URL("./engine.worker.ts", import.meta.url), { type: "module" });
@@ -46,7 +50,19 @@ function resultText(status: string, user: Side): string | null {
   }
 }
 
+/** "3.Bc4" or "3...Nf6" for the move at index `ply` (0 = White's first move). */
+function moveLabel(ply: number, san: string) {
+  const n = Math.floor(ply / 2) + 1;
+  return ply % 2 === 0 ? `${n}.${san}` : `${n}...${san}`;
+}
+
 const LAST_MOVE: CSSProperties = { background: "rgba(255, 213, 79, 0.45)" };
+
+const NOTE_COLORS: Record<Note["kind"], string> = {
+  book: "#3b82f6",
+  info: "#9ca3af",
+  warn: "#f59e0b",
+};
 
 // ---------- The component ----------
 
@@ -57,9 +73,15 @@ export default function App() {
   const userSideRef = useRef<Side>("w");
   const movesRef = useRef<string[]>([]);
   const requestId = useRef(0);
-  const pending = useRef<{ id: number; delay: number; sentAt: number } | null>(null);
+  const pending = useRef<{ id: number; delay: number; sentAt: number; kind: "search" | "book" } | null>(null);
   const botTimer = useRef<number | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const notesRef = useRef<HTMLDivElement>(null);
+  // Opening book
+  const bookRef = useRef<BookLine[]>([]);
+  const inBookRef = useRef(false);
+  const chosenOpeningRef = useRef<Opening | null>(null);
+  const noteId = useRef(0);
 
   // State: what's drawn on the screen
   const [engineLoaded, setEngineLoaded] = useState(false);
@@ -73,6 +95,9 @@ export default function App() {
   const [pendingPromotion, setPendingPromotion] = useState<string | null>(null);
   const [thinking, setThinking] = useState(false);
   const [info, setInfo] = useState("");
+  const [chosenOpening, setChosenOpening] = useState<Opening | null>(null);
+  const [positionName, setPositionName] = useState<string | null>(null);
+  const [notes, setNotes] = useState<Note[]>([]);
 
   useEffect(() => {
     engineReady.then(() => setEngineLoaded(true));
@@ -82,10 +107,18 @@ export default function App() {
     };
   }, []);
 
-  // Keep the move list scrolled to the latest move
+  // Keep the move list and the coach notes scrolled to the latest entry
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight });
   }, [sanList]);
+  useEffect(() => {
+    notesRef.current?.scrollTo({ top: notesRef.current.scrollHeight });
+  }, [notes]);
+
+  function addNote(kind: Note["kind"], text: string) {
+    const id = ++noteId.current;
+    setNotes((prev) => [...prev, { id, kind, text }]);
+  }
 
   // ---------- Engine worker ----------
 
@@ -109,12 +142,12 @@ export default function App() {
       clearTimeout(botTimer.current);
       botTimer.current = null;
     }
-    if (pending.current) {
+    if (pending.current?.kind === "search") {
       // A search is still running: kill the worker so it doesn't keep thinking
       worker.current?.terminate();
       worker.current = null;
-      pending.current = null;
     }
+    pending.current = null;
     requestId.current++;
     setThinking(false);
   }
@@ -122,12 +155,38 @@ export default function App() {
   function requestBotMove() {
     const g = game.current;
     if (!g || g.status() !== "ongoing" || g.side_to_move() === userSideRef.current) return;
-
-    const delay = 1000 + Math.random() * 4000; // 1–5 seconds of "thinking"
     const id = ++requestId.current;
-    pending.current = { id, delay, sentAt: performance.now() };
     setThinking(true);
 
+    // 1. Opening book: play the prepared move (a shorter "thinking" pause, 1–2.5 s)
+    if (inBookRef.current) {
+      const choice = pickBookMove(bookRef.current, movesRef.current);
+      if (choice) {
+        const delay = 1000 + Math.random() * 1500;
+        pending.current = { id, delay, sentAt: performance.now(), kind: "book" };
+        botTimer.current = window.setTimeout(() => {
+          botTimer.current = null;
+          if (pending.current?.id !== id) return;
+          pending.current = null;
+          const ply = movesRef.current.length;
+          if (applyMove(choice.uci)) {
+            addNote("book", `${moveLabel(ply, choice.san)} (book) ${choice.idea}`);
+            setInfo(`Book move · ${choice.lineName}`);
+          }
+          setThinking(false);
+        }, delay);
+        return;
+      }
+      // The prepared line has run out
+      inBookRef.current = false;
+      if (chosenOpeningRef.current) {
+        addNote("info", "End of the prepared line. From here on, the bot thinks for itself.");
+      }
+    }
+
+    // 2. Engine search in the worker: 1–5 s of real thinking
+    const delay = 1000 + Math.random() * 4000;
+    pending.current = { id, delay, sentAt: performance.now(), kind: "search" };
     const req: SearchRequest = {
       id,
       startFen: START_FEN,
@@ -157,9 +216,12 @@ export default function App() {
   function sync() {
     const g = game.current;
     if (!g) return;
-    setFen(g.fen());
+    const f = g.fen();
+    setFen(f);
     setStatus(g.status());
     setEvalCp(g.evaluation());
+    const name = openingName(f);
+    if (name) setPositionName(name); // keep the last known name once we leave theory
   }
 
   /** Plays a UCI move on the page's game and records it. */
@@ -176,7 +238,32 @@ export default function App() {
     return true;
   }
 
-  function startGame(side: Side) {
+  /** After the user's move: explain it if it's theory, or announce leaving the book. */
+  function checkUserMoveAgainstBook(san: string) {
+    if (!inBookRef.current) return;
+    const played = movesRef.current;
+    const ply = played.length - 1;
+    const opening = chosenOpeningRef.current;
+
+    if (isInBook(bookRef.current, played)) {
+      const m = lastBookMove(bookRef.current, played);
+      if (m) addNote("book", `${moveLabel(ply, m.san)} (book) ${m.idea}`);
+      return;
+    }
+
+    inBookRef.current = false;
+    if (opening) {
+      const name = openingName(game.current!.fen());
+      addNote(
+        "warn",
+        `${moveLabel(ply, san)} leaves the ${opening.name} lines prepared for this game.` +
+          (name ? ` This position is known as ${name}.` : "") +
+          " From here on, the bot thinks for itself."
+      );
+    }
+  }
+
+  function startGame(side: Side, opening: Opening | null) {
     cancelBot();
     try {
       game.current?.free();
@@ -186,12 +273,23 @@ export default function App() {
     game.current = new WasmGame();
     movesRef.current = [];
     userSideRef.current = side;
+    chosenOpeningRef.current = opening;
+    bookRef.current = bookLines(opening);
+    inBookRef.current = true;
+    noteId.current = 0;
 
     setUserSide(side);
+    setChosenOpening(opening);
     setSanList([]);
     setLastMove(null);
     setPendingPromotion(null);
     setInfo("");
+    setPositionName(null);
+    setNotes(
+      opening
+        ? [{ id: 0, kind: "info", text: `The bot will play the ${opening.name} (${opening.firstMoves}). ${opening.description}` }]
+        : []
+    );
     setScreen("game");
     sync();
 
@@ -226,22 +324,33 @@ export default function App() {
       return false; // the pawn waits on its square until a piece is chosen
     }
 
-    if (!legal.includes(uci) || !applyMove(uci)) return false; // illegal: snap back
+    if (!legal.includes(uci)) return false; // illegal: snap back
+    const san = g.san(uci) ?? uci;
+    if (!applyMove(uci)) return false;
+    checkUserMoveAgainstBook(san);
     requestBotMove();
     return true;
   }
 
   function choosePromotion(piece: "q" | "r" | "b" | "n") {
-    if (!pendingPromotion) return;
-    const ok = applyMove(pendingPromotion + piece);
+    const g = game.current;
+    if (!g || !pendingPromotion) return;
+    const uci = pendingPromotion + piece;
+    const san = g.san(uci) ?? uci;
+    const ok = applyMove(uci);
     setPendingPromotion(null);
-    if (ok) requestBotMove();
+    if (ok) {
+      checkUserMoveAgainstBook(san);
+      requestBotMove();
+    }
   }
 
   // ---------- Screens ----------
 
+  const page: CSSProperties = { fontFamily: "sans-serif", padding: "0 16px" };
+
   if (!engineLoaded) {
-    return <p style={{ textAlign: "center", marginTop: "4rem", fontFamily: "sans-serif" }}>Loading engine…</p>;
+    return <p style={{ ...page, textAlign: "center", marginTop: "4rem" }}>Loading engine…</p>;
   }
 
   if (screen === "menu") {
@@ -260,18 +369,58 @@ export default function App() {
       color: "#222",
     };
     return (
-      <div style={{ maxWidth: 520, margin: "4rem auto", padding: "0 16px", textAlign: "center", fontFamily: "sans-serif" }}>
+      <div style={{ ...page, maxWidth: 520, margin: "4rem auto", textAlign: "center" }}>
         <h1 style={{ marginBottom: 8 }}>Kasparov</h1>
         <p style={{ opacity: 0.7, marginTop: 0 }}>Choose your side</p>
         <div style={{ display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap", marginTop: 24 }}>
-          <button style={big} onClick={() => startGame("w")}>
+          <button style={big} onClick={() => startGame("w", null)}>
             <span style={{ fontSize: 56 }}>♔</span>
             Play as White
           </button>
-          <button style={big} onClick={() => startGame("b")}>
+          <button style={big} onClick={() => setScreen("openings")}>
             <span style={{ fontSize: 56 }}>♚</span>
             Play as Black
           </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (screen === "openings") {
+    const card: CSSProperties = {
+      textAlign: "left",
+      padding: "12px 14px",
+      borderRadius: 10,
+      border: "1px solid rgba(128, 128, 128, 0.4)",
+      background: "transparent",
+      color: "inherit",
+      cursor: "pointer",
+      display: "flex",
+      flexDirection: "column",
+      gap: 4,
+    };
+    return (
+      <div style={{ ...page, maxWidth: 820, margin: "2.5rem auto" }}>
+        <button onClick={() => setScreen("menu")}>← Back</button>
+        <h2 style={{ marginBottom: 4 }}>Which opening should the bot play?</h2>
+        <p style={{ opacity: 0.7, marginTop: 0 }}>
+          The bot plays White and follows the opening you pick, explaining each move. If you leave its
+          prepared lines, it tells you and starts thinking for itself.
+        </p>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 12 }}>
+          <button style={{ ...card, borderStyle: "dashed" }} onClick={() => startGame("b", null)}>
+            <strong>No preference</strong>
+            <span style={{ fontSize: 13, opacity: 0.75 }}>The bot picks a different popular opening each game.</span>
+          </button>
+          {WHITE_OPENINGS.map((o) => (
+            <button key={o.id} style={card} onClick={() => startGame("b", o)}>
+              <strong>
+                {o.name} <span style={{ fontWeight: 400, opacity: 0.6 }}>{o.eco}</span>
+              </strong>
+              <span style={{ fontFamily: "monospace", fontSize: 13 }}>{o.firstMoves}</span>
+              <span style={{ fontSize: 13, opacity: 0.75 }}>{o.description}</span>
+            </button>
+          ))}
         </div>
       </div>
     );
@@ -288,18 +437,24 @@ export default function App() {
   const rows: [number, string, string | undefined][] = [];
   for (let i = 0; i < sanList.length; i += 2) rows.push([i / 2 + 1, sanList[i], sanList[i + 1]]);
 
+  const box: CSSProperties = {
+    border: "1px solid rgba(128, 128, 128, 0.35)",
+    borderRadius: 8,
+    padding: "6px 10px",
+    overflowY: "auto",
+  };
+
   return (
     <div
       style={{
+        ...page,
         display: "flex",
         flexWrap: "wrap",
         gap: 24,
         justifyContent: "center",
         alignItems: "flex-start",
         margin: "2rem auto",
-        padding: "0 16px",
-        maxWidth: 820,
-        fontFamily: "sans-serif",
+        maxWidth: 900,
       }}
     >
       {/* Board */}
@@ -355,29 +510,25 @@ export default function App() {
       </div>
 
       {/* Side panel */}
-      <div style={{ width: 260, display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ width: 320, maxWidth: "100%", display: "flex", flexDirection: "column", gap: 12 }}>
         <div>
           <div style={{ fontSize: 13, opacity: 0.6 }}>
             You play {userSide === "w" ? "White" : "Black"}
+            {chosenOpening && ` · Bot's opening: ${chosenOpening.name}`}
           </div>
           <div style={{ fontSize: 20, fontWeight: 600 }}>{turnText}</div>
         </div>
 
+        {positionName && (
+          <div style={{ fontSize: 14 }}>
+            <span style={{ opacity: 0.6 }}>Opening: </span>
+            {positionName}
+          </div>
+        )}
         <div style={{ fontSize: 14 }}>Evaluation: {formatScore(evalCp)}</div>
         {info && <div style={{ fontSize: 13, opacity: 0.7 }}>Bot: {info}</div>}
 
-        <div
-          ref={listRef}
-          style={{
-            maxHeight: 320,
-            overflowY: "auto",
-            border: "1px solid rgba(128, 128, 128, 0.35)",
-            borderRadius: 8,
-            padding: "6px 10px",
-            fontFamily: "monospace",
-            fontSize: 15,
-          }}
-        >
+        <div ref={listRef} style={{ ...box, maxHeight: 200, fontFamily: "monospace", fontSize: 15 }}>
           {rows.length === 0 && <div style={{ opacity: 0.5 }}>No moves yet</div>}
           {rows.map(([n, white, black]) => (
             <div key={n} style={{ display: "grid", gridTemplateColumns: "36px 1fr 1fr", padding: "2px 0" }}>
@@ -386,6 +537,21 @@ export default function App() {
               <span>{black ?? ""}</span>
             </div>
           ))}
+        </div>
+
+        <div>
+          <div style={{ fontSize: 13, opacity: 0.6, marginBottom: 4 }}>Coach</div>
+          <div ref={notesRef} style={{ ...box, maxHeight: 220, display: "flex", flexDirection: "column", gap: 8 }}>
+            {notes.length === 0 && <div style={{ opacity: 0.5, fontSize: 14 }}>Notes about the moves appear here.</div>}
+            {notes.map((n) => (
+              <div
+                key={n.id}
+                style={{ fontSize: 14, lineHeight: 1.4, borderLeft: `3px solid ${NOTE_COLORS[n.kind]}`, paddingLeft: 8 }}
+              >
+                {n.text}
+              </div>
+            ))}
+          </div>
         </div>
 
         <button onClick={backToMenu}>{result ? "New game" : "Back to menu"}</button>

@@ -1,0 +1,1 @@
+Este ficheiro de book run tests de maneira a verificar se corre bem com as openings deve ser movido para dentro da pasta web/src, e depois dentro da pasta web correr npx tsx src/book.test.ts

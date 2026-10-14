@@ -1,0 +1,489 @@
+# Curated openings. Format:
+#   @id | Name | ECO | white|defense | defining moves (SAN text)
+#   ? short description
+#   - line name
+#   SAN :: idea          (idea may be omitted if the same move from the same position was explained before)
+
+@italian | Italian Game | C50 | white | 1.e4 e5 2.Nf3 Nc6 3.Bc4
+? White develops quickly and aims the bishop at f7, the weakest square near Black's king.
+- Giuoco Pianissimo
+e4 :: Takes space in the center and opens lines for the queen and the light-squared bishop.
+e5 :: Black claims an equal share of the center and frees the dark-squared bishop.
+Nf3 :: Develops a knight toward the center and attacks the e5 pawn.
+Nc6 :: Develops the knight and defends the e5 pawn.
+Bc4 :: The bishop eyes f7, the square next to Black's king that only the king defends.
+Bc5 :: Black mirrors White: the bishop eyes f2, White's sensitive square.
+c3 :: Prepares a future d4 push to challenge Black in the center.
+Nf6 :: Develops and attacks the e4 pawn.
+d3 :: Protects e4 calmly and keeps the center solid: the slow 'Giuoco Pianissimo' plan.
+d6 :: Supports e5 and opens a diagonal for the light-squared bishop.
+O-O :: Castles: the king goes to safety and the rook comes toward the center.
+O-O :: Castles: the king goes to safety and the rook comes toward the center.
+Re1 :: The rook joins the center and adds protection to e4.
+a6 :: Prepares ...Ba7, so the bishop can't be chased away, and keeps White's pieces off b5.
+- Two Knights Defense
+e4
+e5
+Nf3
+Nc6
+Bc4
+Nf6 :: The Two Knights Defense: Black develops fast and counterattacks e4 instead of copying White.
+d3 :: White calmly defends e4 and avoids the very sharp lines after 4.Ng5.
+Be7 :: A modest, solid square for the bishop, preparing to castle.
+O-O :: Castles: the king goes to safety and the rook comes toward the center.
+O-O :: Castles: the king goes to safety and the rook comes toward the center.
+Re1 :: The rook joins the center and adds protection to e4.
+d6 :: Supports e5 and opens a diagonal for the light-squared bishop.
+c3 :: Prepares d4 and gives the bishop a retreat square on c2.
+
+@ruy | Ruy Lopez (Spanish Game) | C60 | white | 1.e4 e5 2.Nf3 Nc6 3.Bb5
+? White pressures the knight that defends e5, building slow, long-lasting pressure.
+- Closed Ruy Lopez
+e4
+e5
+Nf3
+Nc6
+Bb5 :: The Spanish bishop pressures the knight that defends e5.
+a6 :: Asks the bishop a question: retreat or trade?
+Ba4 :: White keeps the pressure on the c6 knight instead of trading.
+Nf6 :: Develops and attacks e4.
+O-O :: White castles; e4 is indirectly protected because Black's king is still in the center.
+Be7 :: A solid setup: Black prepares to castle (the Closed Ruy Lopez).
+Re1 :: Defends e4, so Bxc6 followed by Nxe5 becomes a real threat.
+b5 :: Black chases the bishop away to end the pressure on c6.
+Bb3 :: The bishop retreats but still aims at f7.
+d6 :: Supports e5 solidly.
+c3 :: Prepares d4 and gives the bishop a retreat on c2.
+O-O :: Castles: the king goes to safety and the rook comes toward the center.
+h3 :: Stops ...Bg4, which would pin the knight, and prepares d4.
+- Berlin Defense
+e4
+e5
+Nf3
+Nc6
+Bb5
+Nf6 :: The Berlin Defense: Black develops and attacks e4 right away.
+O-O :: White castles and allows Black to take on e4, planning to win the pawn back.
+Nxe4 :: Black grabs the pawn; White will win it back.
+d4 :: Opens the center while Black's king is still in the middle.
+Nd6 :: The knight retreats and hits the bishop on b5.
+Bxc6 :: Trades the bishop to double Black's pawns.
+dxc6 :: Recaptures toward the center, opening lines for Black's bishops.
+dxe5 :: Gains space and chases the knight.
+Nf5 :: The knight's best square, from where it can later go to d4 or e7.
+Qxd8+ :: Trades queens: the famous 'Berlin endgame', where Black can't castle but has the bishop pair.
+Kxd8 :: The king recaptures; without queens on the board it is safe in the center.
+
+@scotch | Scotch Game | C45 | white | 1.e4 e5 2.Nf3 Nc6 3.d4
+? White opens the center immediately with d4 and plays for active, open positions.
+- Classical Scotch
+e4
+e5
+Nf3
+Nc6
+d4 :: The Scotch: White opens the center right away.
+exd4 :: Black takes, since e5 can't be held comfortably.
+Nxd4 :: Recaptures with a strong, centralized knight.
+Bc5 :: Develops with tempo by attacking the d4 knight.
+Be3 :: Defends the knight and develops.
+Qf6 :: Adds pressure on d4 and eyes f2.
+c3 :: Gives the d4 knight solid pawn support.
+Nge7 :: Develops the knight to e7 because f6 is taken by the queen.
+- Mieses Variation
+e4
+e5
+Nf3
+Nc6
+d4
+exd4
+Nxd4
+Nf6 :: Develops and attacks e4.
+Nxc6 :: Trades knights to damage Black's pawn structure.
+bxc6 :: Recaptures toward the center.
+e5 :: Kicks the f6 knight with tempo and gains space.
+Qe7 :: Attacks the e5 pawn and pins it to the white king along the e-file.
+Qe2 :: Defends e5 and breaks the pin.
+Nd5 :: The knight jumps to a strong central square.
+c4 :: Kicks the knight away from d5.
+
+@kingsgambit | King's Gambit | C30 | white | 1.e4 e5 2.f4
+? A romantic gambit: White gives a pawn to open the f-file and attack.
+- Kieseritzky Gambit
+e4
+e5
+f4 :: The King's Gambit: White offers a pawn to deflect Black's e5 pawn and open the f-file.
+exf4 :: Black accepts the gambit.
+Nf3 :: Develops and stops ...Qh4+.
+g5 :: Black tries to keep the extra pawn on f4.
+h4 :: Attacks g5 to break up Black's pawn chain.
+g4 :: Advances with tempo, attacking the knight.
+Ne5 :: The Kieseritzky: the knight jumps to a central square, eyeing f7 and g4.
+- Modern Defense
+e4
+e5
+f4
+exf4
+Nf3
+d5 :: Black strikes back in the center instead of clinging to the extra pawn.
+exd5 :: Takes the pawn.
+Nf6 :: Develops and attacks the d5 pawn.
+Bb5+ :: Develops with check.
+c6 :: Blocks the check and challenges d5.
+dxc6 :: Takes the pawn.
+bxc6 :: Recaptures; Black gets open lines for quick development.
+Bc4 :: The bishop retreats to a strong diagonal aimed at f7.
+- Gambit Declined
+e4
+e5
+f4
+Bc5 :: Declines the gambit: the bishop on c5 stops White from castling kingside for now.
+Nf3 :: Develops and stops ...Qh4+.
+d6 :: Supports e5.
+c3 :: Prepares d4 to kick the bishop and build a big center.
+
+@vienna | Vienna Game | C25 | white | 1.e4 e5 2.Nc3
+? White develops the queen's knight first, keeping the option of a quick f4.
+- Vienna Gambit
+e4
+e5
+Nc3 :: The Vienna: develops the queen's knight first, preparing f4.
+Nf6 :: Develops and attacks e4.
+f4 :: The Vienna Gambit: White strikes at e5 to open the f-file.
+d5 :: Black hits back in the center, the strongest reply.
+fxe5 :: Takes on e5.
+Nxe4 :: The knight takes e4 and lands on a strong central square.
+Nf3 :: Develops and supports e5.
+Be7 :: Develops and prepares to castle.
+- Vienna with Bc4
+e4
+e5
+Nc3
+Nc6 :: Develops and defends e5.
+Bc4 :: The bishop eyes f7.
+Nf6 :: Develops and attacks e4.
+d3 :: Defends e4 while keeping the f4 plan.
+Bc5 :: Active development aiming at f2.
+f4 :: Strikes at e5 to open the f-file.
+d6 :: Supports e5.
+Nf3 :: Develops and adds pressure on e5.
+
+@queensgambit | Queen's Gambit | D06 | white | 1.d4 d5 2.c4
+? White offers a side pawn to pull Black's d5 pawn away from the center.
+- Queen's Gambit Declined
+d4 :: Takes the center and frees the dark-squared bishop.
+d5 :: Black claims an equal share of the center.
+c4 :: The Queen's Gambit: White offers a pawn to pull Black's d5 pawn away from the center.
+e6 :: The Queen's Gambit Declined: Black firmly supports d5.
+Nc3 :: Develops and adds pressure on d5.
+Nf6 :: Develops and defends d5.
+Bg5 :: Pins the knight that defends d5.
+Be7 :: Breaks the pin.
+e3 :: Opens a path for the light-squared bishop.
+O-O :: Castles: the king goes to safety and the rook comes toward the center.
+Nf3 :: Develops and controls e5.
+Nbd7 :: Develops and supports a later ...c5 or ...e5 break.
+Rc1 :: The rook goes to the c-file, which often opens after cxd5.
+- Queen's Gambit Accepted
+d4
+d5
+c4
+dxc4 :: The Queen's Gambit Accepted: Black takes the pawn, planning to return it for free development.
+e3 :: Opens a path for the bishop to win back c4.
+Nf6 :: Develops and controls the center.
+Bxc4 :: Wins the pawn back with a well-placed bishop.
+e6 :: Opens a path for the dark-squared bishop.
+Nf3 :: Develops and controls e5.
+c5 :: Black strikes at White's d4 pawn.
+O-O :: Castles: the king goes to safety and the rook comes toward the center.
+a6 :: Prepares ...b5 to gain space on the queenside.
+- Slav Defense
+d4
+d5
+c4
+c6 :: The Slav Defense: supports d5 with a pawn while keeping the c8 bishop free.
+Nf3 :: Develops and controls e5.
+Nf6 :: Develops and defends d5.
+Nc3 :: Develops and adds pressure on d5.
+dxc4 :: Takes on c4, hoping to support it with ...b5.
+a4 :: Stops ...b5 so Black can't hold on to the pawn.
+Bf5 :: Develops the light-squared bishop outside the pawn chain: the point of the Slav.
+e3 :: Prepares Bxc4.
+e6 :: Opens the path for the dark-squared bishop.
+Bxc4 :: Wins the pawn back.
+
+@catalan | Catalan Opening | E01 | white | 1.d4 Nf6 2.c4 e6 3.g3
+? A Queen's Gambit where White's bishop on g2 presses along the long diagonal.
+- Open Catalan
+d4
+Nf6 :: Develops and stops e4.
+c4 :: Gains more space in the center.
+e6 :: Prepares ...d5 and opens the dark-squared bishop.
+g3 :: The Catalan: the bishop will go to g2 and aim at Black's queenside.
+d5 :: Takes the center.
+Bg2 :: The Catalan bishop: a long diagonal pointing at b7 and a8.
+Be7 :: Develops and prepares to castle.
+Nf3 :: Develops and controls e5.
+O-O :: Castles: the king goes to safety and the rook comes toward the center.
+O-O :: Castles: the king goes to safety and the rook comes toward the center.
+dxc4 :: Takes the pawn; Black will try to hold it or return it for activity.
+Qc2 :: Prepares to win back the c4 pawn.
+a6 :: Prepares ...b5 to protect c4.
+Qxc4 :: White regains the pawn.
+b5 :: Gains space and chases the queen.
+Qc2 :: The queen retreats to a safe square.
+Bb7 :: Fights the Catalan bishop on the long diagonal.
+- Catalan with ...Bb4+
+d4
+Nf6
+c4
+e6
+g3
+Bb4+ :: A check to disrupt White's development.
+Bd2 :: Blocks the check and offers a bishop trade.
+Be7 :: Black avoids the trade and keeps the bishop.
+Bg2 :: The Catalan bishop: a long diagonal pointing at b7 and a8.
+d5 :: Takes the center.
+Nf3 :: Develops and controls e5.
+O-O :: Castles: the king goes to safety and the rook comes toward the center.
+O-O :: Castles: the king goes to safety and the rook comes toward the center.
+- Catalan via 1...d5
+d4
+d5
+c4
+e6
+Nf3 :: Develops and keeps the option of g3.
+Nf6 :: Develops and defends d5.
+g3 :: The Catalan setup, reached by a different move order.
+
+@london | London System | D02 | white | 1.d4, Bf4, e3, Nf3, c3
+? A solid system: White plays the same setup against almost anything.
+- Main line against 1...d5
+d4
+d5
+Bf4 :: The London System: the bishop develops outside the pawn chain before e3.
+Nf6 :: Develops and controls e4.
+e3 :: Supports d4 and opens the light-squared bishop.
+e6 :: Opens the dark-squared bishop and supports d5.
+Nf3 :: Develops and controls e5.
+c5 :: Black strikes at d4.
+c3 :: Supports d4: the London pyramid of pawns on c3, d4 and e3.
+Nc6 :: Develops and adds pressure on d4.
+Nbd2 :: Develops; the knight supports e4 and doesn't block the c-pawn.
+Bd6 :: Offers to trade White's good bishop.
+Bg3 :: Avoids the trade; if Black takes, hxg3 opens the h-file for White's rook.
+O-O :: Castles: the king goes to safety and the rook comes toward the center.
+Bd3 :: Develops toward Black's king.
+- Against the King's Indian setup
+d4
+Nf6
+Bf4 :: The London bishop develops before e3, outside the pawn chain.
+g6 :: Black plans to fianchetto the bishop on g7.
+e3 :: Supports d4 and opens the light-squared bishop.
+Bg7 :: The bishop on g7 eyes White's center.
+Nf3 :: Develops and controls e5.
+O-O :: Castles: the king goes to safety and the rook comes toward the center.
+Be2 :: A modest, safe square for the bishop.
+d6 :: Prepares ...e5 or ...c5.
+h3 :: Gives the bishop on f4 an escape square on h2.
+- Against 1...Nf6 and ...e6
+d4
+Nf6
+Bf4
+e6 :: Opens the dark-squared bishop and prepares ...c5 or ...d5.
+e3 :: Supports d4 and opens the light-squared bishop.
+c5 :: Black strikes at d4.
+c3 :: Supports d4: the London pyramid of pawns on c3, d4 and e3.
+Nc6 :: Develops and adds pressure on d4.
+Nd2 :: Develops; the knight supports e4 and leaves f3 for the other knight.
+d5 :: Takes the center.
+Ngf3 :: Develops and controls e5.
+Bd6 :: Offers to trade White's good bishop.
+Bg3 :: Avoids the trade; if Black takes, hxg3 opens the h-file for White's rook.
+- Against 1...d5 and ...c5
+d4
+d5
+Bf4
+c5 :: Black attacks White's center immediately.
+e3 :: Supports d4 and opens the light-squared bishop.
+Nc6 :: Develops and adds pressure on d4.
+c3 :: Supports d4: the London pyramid of pawns on c3, d4 and e3.
+Nf6 :: Develops and controls e4.
+Nd2 :: Develops; the knight supports e4 and leaves f3 for the other knight.
+e6 :: Opens the dark-squared bishop.
+Ngf3 :: Develops and controls e5.
+Bd6 :: Offers to trade White's good bishop.
+Bg3 :: Avoids the trade; if Black takes, hxg3 opens the h-file for White's rook.
+
+@english | English Opening | A20 | white | 1.c4
+? White controls d5 from the side and keeps a flexible, positional game.
+- Reversed Sicilian
+c4 :: The English Opening: White controls d5 from the side and stays flexible.
+e5 :: A 'reversed Sicilian': Black takes central space.
+Nc3 :: Develops and adds control of d5.
+Nf6 :: Develops and controls d5 and e4.
+Nf3 :: Develops and attacks e5.
+Nc6 :: Develops and defends e5.
+g3 :: Prepares Bg2 to control the long diagonal.
+d5 :: Black strikes in the center.
+cxd5 :: Trades the side pawn for Black's center pawn.
+Nxd5 :: Recaptures with a centralized knight.
+Bg2 :: Pressures the knight on d5 along the long diagonal.
+Nb6 :: The knight steps out of the bishop's line.
+O-O :: Castles: the king goes to safety and the rook comes toward the center.
+- Symmetrical English
+c4
+c5 :: The Symmetrical English: Black copies White and fights for d4.
+Nc3 :: Develops and controls d5.
+Nc6 :: Develops and controls d4.
+g3 :: Prepares Bg2 to control the long diagonal.
+g6 :: Black also prepares a fianchetto.
+Bg2 :: The bishop takes the long diagonal toward b7.
+Bg7 :: The bishop takes the long diagonal toward b2.
+Nf3 :: Develops and controls d4 and e5.
+- Transposing to the Queen's Gambit
+c4
+Nf6 :: Develops and controls e4 and d5.
+Nc3 :: Develops and controls d5.
+e6 :: Prepares ...d5.
+Nf3 :: Develops and controls e5.
+d5 :: Takes the center.
+d4 :: White takes the center too: this transposes to the Queen's Gambit Declined.
+
+@reti | Réti Opening | A09 | white | 1.Nf3 d5 2.c4
+? White controls the center from a distance with knights and fianchettoed bishops.
+- Main line
+Nf3 :: The Réti: a flexible move that controls e5 and d4 without committing the pawns.
+d5 :: Takes the center.
+c4 :: Attacks d5 from the side.
+e6 :: Supports d5 solidly.
+g3 :: Prepares Bg2 to control the long diagonal.
+Nf6 :: Develops and defends d5.
+Bg2 :: The bishop takes the long diagonal.
+Be7 :: Develops and prepares to castle.
+O-O :: Castles: the king goes to safety and the rook comes toward the center.
+O-O :: Castles: the king goes to safety and the rook comes toward the center.
+b3 :: Prepares Bb2: both bishops will aim at the center from afar.
+- Réti with ...d4
+Nf3
+d5
+c4
+d4 :: Black gains space and limits White's pieces.
+e3 :: Challenges the d4 pawn.
+Nc6 :: Supports d4.
+exd4 :: Trades pawns to open the center.
+Nxd4 :: Recaptures with a central knight.
+Nxd4 :: White trades knights.
+Qxd4 :: The queen recaptures in the center.
+Nc3 :: Develops with tempo: Black's queen must move again.
+- Against 1...Nf6
+Nf3
+Nf6 :: Develops and mirrors White.
+c4 :: Takes space on the queenside and controls d5.
+g6 :: Black plans to fianchetto the bishop on g7.
+g3 :: Prepares Bg2 to control the long diagonal.
+Bg7 :: The bishop takes the long diagonal.
+Bg2 :: The bishop takes the long diagonal.
+O-O :: Castles: the king goes to safety and the rook comes toward the center.
+O-O :: Castles: the king goes to safety and the rook comes toward the center.
+d6 :: Prepares ...e5 to fight for the center.
+
+@sicilian | Sicilian Defense | B20 | defense | 1.e4 c5
+? Black fights for d4 with a side pawn and avoids symmetry.
+- Najdorf
+e4
+c5 :: The Sicilian Defense: Black fights for d4 with a side pawn and avoids symmetry.
+Nf3 :: Develops and prepares d4.
+d6 :: Controls e5 and opens the light-squared bishop.
+d4 :: Opens the center.
+cxd4 :: Trades a side pawn for White's center pawn.
+Nxd4 :: Recaptures with a centralized knight.
+Nf6 :: Develops and attacks e4.
+Nc3 :: Defends e4.
+a6 :: The Najdorf: a flexible move that stops Nb5 and prepares ...e5 or ...b5.
+- Sveshnikov
+e4
+c5
+Nf3
+Nc6 :: Develops and fights for d4.
+d4 :: Opens the center.
+cxd4 :: Trades a side pawn for White's center pawn.
+Nxd4 :: Recaptures with a centralized knight.
+Nf6 :: Develops and attacks e4.
+Nc3 :: Defends e4.
+e5 :: The Sveshnikov: Black kicks the knight and grabs central space.
+
+@french | French Defense | C00 | defense | 1.e4 e6
+? A solid defense: Black prepares ...d5 with pawn support.
+- Classical
+e4
+e6 :: The French Defense: Black prepares ...d5 with solid support.
+d4 :: Takes the full center.
+d5 :: Black challenges e4.
+Nc3 :: Defends e4.
+Nf6 :: Increases the pressure on e4.
+Bg5 :: Pins the knight that attacks e4.
+Be7 :: Breaks the pin.
+- Advance Variation
+e4
+e6
+d4
+d5
+e5 :: The Advance Variation: White gains space and cramps Black.
+c5 :: Black attacks the base of White's pawn chain.
+c3 :: Supports d4.
+Nc6 :: Adds pressure on d4.
+Nf3 :: Defends d4.
+Qb6 :: Piles up on d4 and eyes b2.
+
+@carokann | Caro-Kann Defense | B10 | defense | 1.e4 c6
+? A very solid defense: ...d5 is prepared while the c8 bishop stays free.
+- Classical
+e4
+c6 :: The Caro-Kann: prepares ...d5 while keeping the c8 bishop free.
+d4 :: Takes the full center.
+d5 :: Black challenges e4.
+Nc3 :: Defends e4.
+dxe4 :: Black trades the central pawn.
+Nxe4 :: Recaptures with a centralized knight.
+Bf5 :: Develops the bishop outside the pawn chain, attacking the knight.
+Ng3 :: Kicks the bishop.
+Bg6 :: Retreats while keeping the diagonal.
+- Advance Variation
+e4
+c6
+d4
+d5
+e5 :: The Advance Variation: White gains space.
+Bf5 :: Develops the bishop before closing the chain with ...e6.
+Nf3 :: Develops and supports d4.
+e6 :: Opens the dark-squared bishop and supports d5.
+
+@kingsindian | King's Indian Defense | E60 | defense | 1.d4 Nf6 2.c4 g6
+? Black lets White build a big center, then strikes at it.
+- Classical
+d4
+Nf6
+c4
+g6 :: The King's Indian: Black lets White take the center, planning to strike it later.
+Nc3 :: Develops and controls e4 and d5.
+Bg7 :: The bishop takes the long diagonal.
+e4 :: White builds a big pawn center.
+d6 :: Prepares ...e5.
+Nf3 :: Develops and controls e5.
+O-O :: Castles: the king goes to safety and the rook comes toward the center.
+Be2 :: Develops and prepares to castle.
+e5 :: The key break: Black strikes at White's center.
+
+@nimzo | Nimzo-Indian Defense | E20 | defense | 1.d4 Nf6 2.c4 e6 3.Nc3 Bb4
+? Black pins the c3 knight to stop White from playing e4.
+- Rubinstein
+d4
+Nf6
+c4
+e6
+Nc3 :: Develops and prepares e4.
+Bb4 :: The Nimzo-Indian: pins the knight to stop e4.
+e3 :: Solid: opens the bishop and supports d4.
+O-O :: Castles: the king goes to safety and the rook comes toward the center.
+Bd3 :: Develops toward Black's king.
+d5 :: Takes the center.
