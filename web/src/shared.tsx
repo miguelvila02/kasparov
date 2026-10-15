@@ -80,18 +80,56 @@ export const box: CSSProperties = {
   overflowY: "auto",
 };
 
-export const card: CSSProperties = {
-  textAlign: "left",
-  padding: "12px 14px",
-  borderRadius: 10,
-  border: "1px solid rgba(128, 128, 128, 0.4)",
-  background: "transparent",
-  color: "inherit",
-  cursor: "pointer",
-  display: "flex",
-  flexDirection: "column",
-  gap: 4,
-};
+/** One step in the navigation path. Steps with `onClick` can be clicked to go back there. */
+export type Crumb = { label: string; onClick?: () => void };
+
+/**
+ * The bar at the top of every screen: "← Back" (to the previous step), the clickable
+ * path (Kasparov › Learn Openings › Italian Game), and Esc as a shortcut for Back.
+ */
+export function NavBar({ trail, escDisabled = false }: { trail: Crumb[]; escDisabled?: boolean }) {
+  const back = trail
+    .slice(0, -1)
+    .reverse()
+    .find((c) => c.onClick);
+
+  useEffect(() => {
+    if (!back?.onClick || escDisabled) return;
+    const go = back.onClick;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") go();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [back, escDisabled]);
+
+  return (
+    <nav className="navbar" aria-label="Navigation">
+      {back && (
+        <button className="btn-ghost" onClick={back.onClick} title={`Back to ${back.label} (Esc)`}>
+          ← Back
+        </button>
+      )}
+      <ol className="crumbs">
+        {trail.map((c, i) => {
+          const last = i === trail.length - 1;
+          return (
+            <li key={i}>
+              {c.onClick && !last ? (
+                <button className="crumb-link" onClick={c.onClick}>
+                  {c.label}
+                </button>
+              ) : (
+                <span aria-current={last ? "page" : undefined}>{c.label}</span>
+              )}
+            </li>
+          );
+        })}
+      </ol>
+      {back && <span className="nav-hint">Esc = back</span>}
+    </nav>
+  );
+}
 
 /** Board + side panel layout used by every mode. */
 export const gameLayout: CSSProperties = {

@@ -1,6 +1,5 @@
 // "User vs CPU": the full game against the bot (Phases 5–9) plus takebacks.
 import { useEffect, useRef, useState } from "react";
-import type { CSSProperties } from "react";
 import { WasmGame } from "engine";
 import { Chessboard } from "react-chessboard";
 import type { SearchRequest, SearchResponse, Verdict } from "./engine.worker";
@@ -13,8 +12,8 @@ import {
   LAST_MOVE,
   MoveList,
   PromotionDialog,
+  NavBar,
   START_FEN,
-  card,
   createWorker,
   formatScore,
   gameLayout,
@@ -400,57 +399,50 @@ export default function CpuGame({ onExit }: { onExit: () => void }) {
   // ---------- Screens ----------
 
   if (screen === "side") {
-    const big: CSSProperties = {
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      gap: 4,
-      width: 170,
-      padding: "20px 0",
-      fontSize: 18,
-      cursor: "pointer",
-      borderRadius: 12,
-      border: "2px solid #b58863",
-      background: "#f0d9b5",
-      color: "#222",
-    };
     return (
-      <div style={{ ...page, maxWidth: 520, margin: "3rem auto", textAlign: "center" }}>
-        <div style={{ textAlign: "left" }}>
-          <button onClick={onExit}>← Menu</button>
+      <>
+        <NavBar trail={[{ label: "Kasparov", onClick: onExit }, { label: "User vs CPU" }]} />
+        <div style={{ ...page, maxWidth: 520, margin: "2.5rem auto", textAlign: "center" }}>
+          <h2 style={{ marginBottom: 8 }}>User vs CPU</h2>
+          <p style={{ opacity: 0.7, marginTop: 0 }}>Choose your side</p>
+          <div style={{ display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap", marginTop: 24 }}>
+            <button className="menu-btn side-btn" onClick={() => startGame("w", null)}>
+              <span className="menu-icon">♔</span>
+              Play as White
+            </button>
+            <button className="menu-btn side-btn" onClick={() => setScreen("openings")}>
+              <span className="menu-icon">♚</span>
+              Play as Black
+            </button>
+          </div>
         </div>
-        <h2 style={{ marginBottom: 8 }}>User vs CPU</h2>
-        <p style={{ opacity: 0.7, marginTop: 0 }}>Choose your side</p>
-        <div style={{ display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap", marginTop: 24 }}>
-          <button style={big} onClick={() => startGame("w", null)}>
-            <span style={{ fontSize: 56 }}>♔</span>
-            Play as White
-          </button>
-          <button style={big} onClick={() => setScreen("openings")}>
-            <span style={{ fontSize: 56 }}>♚</span>
-            Play as Black
-          </button>
-        </div>
-      </div>
+      </>
     );
   }
 
   if (screen === "openings") {
     return (
-      <div style={{ ...page, maxWidth: 820, margin: "2.5rem auto" }}>
-        <button onClick={() => setScreen("side")}>← Back</button>
+      <>
+        <NavBar
+          trail={[
+            { label: "Kasparov", onClick: onExit },
+            { label: "User vs CPU", onClick: () => setScreen("side") },
+            { label: "Bot's opening" },
+          ]}
+        />
+      <div style={{ ...page, maxWidth: 820, margin: "2rem auto" }}>
         <h2 style={{ marginBottom: 4 }}>Which opening should the bot play?</h2>
         <p style={{ opacity: 0.7, marginTop: 0 }}>
           The bot plays White and follows the opening you pick, explaining each move. If you leave its prepared lines, it
           tells you and starts thinking for itself.
         </p>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 12 }}>
-          <button style={{ ...card, borderStyle: "dashed" }} onClick={() => startGame("b", null)}>
+          <button className="choice-card dashed" onClick={() => startGame("b", null)}>
             <strong>No preference</strong>
             <span style={{ fontSize: 13, opacity: 0.75 }}>The bot picks a different popular opening each game.</span>
           </button>
           {WHITE_OPENINGS.map((o) => (
-            <button key={o.id} style={card} onClick={() => startGame("b", o)}>
+            <button key={o.id} className="choice-card" onClick={() => startGame("b", o)}>
               <strong>
                 {o.name} <span style={{ fontWeight: 400, opacity: 0.6 }}>{o.eco}</span>
               </strong>
@@ -460,6 +452,7 @@ export default function CpuGame({ onExit }: { onExit: () => void }) {
           ))}
         </div>
       </div>
+      </>
     );
   }
 
@@ -469,6 +462,15 @@ export default function CpuGame({ onExit }: { onExit: () => void }) {
   const canTakeBack = takebacksLeft > 0 && sanList.length > 0 && userMoveCount() > 0;
 
   return (
+    <>
+    <NavBar
+      trail={[
+        { label: "Kasparov", onClick: onExit },
+        { label: "User vs CPU", onClick: leaveGame },
+        { label: `Game as ${userSide === "w" ? "White" : "Black"}` },
+      ]}
+      escDisabled={!!pendingPromotion}
+    />
     <div style={gameLayout}>
       {/* Board */}
       <div style={{ position: "relative", width: "min(480px, 100%)" }}>
@@ -518,7 +520,7 @@ export default function CpuGame({ onExit }: { onExit: () => void }) {
         <MoveList sans={sanList} marks={marks} />
 
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          <button onClick={takeBack} disabled={!canTakeBack} title="Undo your last move and the bot's reply">
+          <button className="btn-primary" onClick={takeBack} disabled={!canTakeBack} title="Undo your last move and the bot's reply">
             ↶ Take back
           </button>
           <span style={{ fontSize: 13, opacity: 0.7 }}>
@@ -528,15 +530,13 @@ export default function CpuGame({ onExit }: { onExit: () => void }) {
 
         <CoachPanel notes={notes} />
 
-        <div style={{ display: "flex", gap: 8 }}>
-          <button onClick={leaveGame} style={{ flex: 1 }}>
-            {result ? "New game" : "Change side / opening"}
+        {result && (
+          <button className="btn-primary btn-block" onClick={leaveGame}>
+            New game
           </button>
-          <button onClick={onExit} style={{ flex: 1 }}>
-            Main menu
-          </button>
-        </div>
+        )}
       </div>
     </div>
+    </>
   );
 }

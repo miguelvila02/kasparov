@@ -10,9 +10,9 @@ import {
   HINT_COLOR,
   LAST_MOVE,
   MoveList,
+  NavBar,
   START_FEN,
   box,
-  card,
   gameLayout,
   moveLabel,
   page,
@@ -50,14 +50,14 @@ function sideName(s: Side) {
 
 export default function LearnOpenings({ onExit }: { onExit: () => void }) {
   const [opening, setOpening] = useState<Opening | null>(null);
-  if (opening) return <Lesson key={opening.id} opening={opening} onBack={() => setOpening(null)} />;
+  if (opening) return <Lesson key={opening.id} opening={opening} onBack={() => setOpening(null)} onHome={onExit} />;
 
   const section = (title: string, list: Opening[]) => (
     <>
       <h3 style={{ marginBottom: 8 }}>{title}</h3>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 12 }}>
         {list.map((o) => (
-          <button key={o.id} style={card} onClick={() => setOpening(o)}>
+          <button key={o.id} className="choice-card" onClick={() => setOpening(o)}>
             <strong>
               {o.name} <span style={{ fontWeight: 400, opacity: 0.6 }}>{o.eco}</span>
             </strong>
@@ -70,8 +70,9 @@ export default function LearnOpenings({ onExit }: { onExit: () => void }) {
   );
 
   return (
-    <div style={{ ...page, maxWidth: 820, margin: "2.5rem auto" }}>
-      <button onClick={onExit}>← Menu</button>
+    <>
+      <NavBar trail={[{ label: "Kasparov", onClick: onExit }, { label: "Learn Openings" }]} />
+    <div style={{ ...page, maxWidth: 820, margin: "2rem auto" }}>
       <h2 style={{ marginBottom: 4 }}>Learn Openings</h2>
       <p style={{ opacity: 0.7, marginTop: 0 }}>
         Pick an opening. First you watch it move by move with the idea behind each move, then you try to play it yourself.
@@ -79,12 +80,13 @@ export default function LearnOpenings({ onExit }: { onExit: () => void }) {
       {section("Openings for White", WHITE_OPENINGS)}
       {section("Defenses for Black", DEFENSES)}
     </div>
+    </>
   );
 }
 
 // ---------- One opening: watch and try ----------
 
-function Lesson({ opening, onBack }: { opening: Opening; onBack: () => void }) {
+function Lesson({ opening, onBack, onHome }: { opening: Opening; onBack: () => void; onHome: () => void }) {
   const lesson = LESSONS[opening.id];
   const side: Side = lesson?.side ?? "w";
   const [lineIdx, setLineIdx] = useState(0);
@@ -92,7 +94,23 @@ function Lesson({ opening, onBack }: { opening: Opening; onBack: () => void }) {
   const line = opening.lines[lineIdx];
   const fens = useMemo(() => lineFens(line), [line]);
 
+  const trail =
+    mode === "watch"
+      ? [
+          { label: "Kasparov", onClick: onHome },
+          { label: "Learn Openings", onClick: onBack },
+          { label: opening.name },
+        ]
+      : [
+          { label: "Kasparov", onClick: onHome },
+          { label: "Learn Openings", onClick: onBack },
+          { label: opening.name, onClick: () => setMode("watch") },
+          { label: "Try it yourself" },
+        ];
+
   return (
+    <>
+    <NavBar trail={trail} />
     <div style={gameLayout}>
       {mode === "watch" ? (
         <Watch
@@ -104,7 +122,6 @@ function Lesson({ opening, onBack }: { opening: Opening; onBack: () => void }) {
           lineIdx={lineIdx}
           setLineIdx={setLineIdx}
           onTry={() => setMode("try")}
-          onBack={onBack}
         />
       ) : (
         <Try
@@ -113,7 +130,6 @@ function Lesson({ opening, onBack }: { opening: Opening; onBack: () => void }) {
           line={line}
           fens={fens}
           side={side}
-          onWatch={() => setMode("watch")}
           onBack={onBack}
           onOtherLine={
             opening.lines.length > 1
@@ -126,6 +142,7 @@ function Lesson({ opening, onBack }: { opening: Opening; onBack: () => void }) {
         />
       )}
     </div>
+    </>
   );
 }
 
@@ -134,11 +151,7 @@ function LineTabs({ opening, lineIdx, setLineIdx }: { opening: Opening; lineIdx:
   return (
     <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
       {opening.lines.map((l, i) => (
-        <button
-          key={l.name}
-          onClick={() => setLineIdx(i)}
-          style={{ fontWeight: i === lineIdx ? 700 : 400, opacity: i === lineIdx ? 1 : 0.75 }}
-        >
+        <button key={l.name} className="tab" aria-pressed={i === lineIdx} onClick={() => setLineIdx(i)}>
           {l.name}
         </button>
       ))}
@@ -156,9 +169,8 @@ function Watch(props: {
   lineIdx: number;
   setLineIdx: (i: number) => void;
   onTry: () => void;
-  onBack: () => void;
 }) {
-  const { opening, line, fens, side, lineIdx, setLineIdx, onTry, onBack } = props;
+  const { opening, line, fens, side, lineIdx, setLineIdx, onTry } = props;
   const lesson = LESSONS[opening.id];
   const [step, setStep] = useState(0); // number of moves shown
   const [playing, setPlaying] = useState(false);
@@ -199,20 +211,19 @@ function Watch(props: {
           }}
         />
         <div style={{ display: "flex", gap: 6, justifyContent: "center", marginTop: 10 }}>
-          <button onClick={() => { setPlaying(false); setStep(0); }} disabled={step === 0} title="Start">⏮</button>
-          <button onClick={() => { setPlaying(false); setStep((s) => Math.max(0, s - 1)); }} disabled={step === 0} title="Previous move">◀</button>
-          <button onClick={() => setPlaying((p) => !p)} disabled={step >= n && !playing} style={{ minWidth: 90 }}>
+          <button className="btn-icon" onClick={() => { setPlaying(false); setStep(0); }} disabled={step === 0} title="Start">⏮</button>
+          <button className="btn-icon" onClick={() => { setPlaying(false); setStep((s) => Math.max(0, s - 1)); }} disabled={step === 0} title="Previous move">◀</button>
+          <button className="btn-primary" onClick={() => setPlaying((p) => !p)} disabled={step >= n && !playing} style={{ minWidth: 100 }}>
             {playing ? "⏸ Pause" : "▶ Play"}
           </button>
-          <button onClick={() => { setPlaying(false); setStep((s) => Math.min(n, s + 1)); }} disabled={step >= n} title="Next move">▶</button>
-          <button onClick={() => { setPlaying(false); setStep(n); }} disabled={step >= n} title="End">⏭</button>
+          <button className="btn-icon" onClick={() => { setPlaying(false); setStep((s) => Math.min(n, s + 1)); }} disabled={step >= n} title="Next move">▶</button>
+          <button className="btn-icon" onClick={() => { setPlaying(false); setStep(n); }} disabled={step >= n} title="End">⏭</button>
         </div>
       </div>
 
       <div style={sidePanel}>
         <div>
-          <button onClick={onBack}>← All openings</button>
-          <h2 style={{ margin: "8px 0 2px" }}>
+          <h2 style={{ margin: "0 0 2px" }}>
             {opening.name} <span style={{ fontWeight: 400, opacity: 0.6, fontSize: 16 }}>{opening.eco}</span>
           </h2>
           <div style={{ fontSize: 13, opacity: 0.7 }}>
@@ -259,7 +270,7 @@ function Watch(props: {
           </div>
         )}
 
-        <button onClick={onTry} style={{ padding: "10px", fontSize: 16, fontWeight: 600 }}>
+        <button className="btn-primary btn-block" onClick={onTry} style={{ padding: "12px", fontSize: 16 }}>
           Try it yourself →
         </button>
       </div>
@@ -274,11 +285,10 @@ function Try(props: {
   line: BookLine;
   fens: string[];
   side: Side;
-  onWatch: () => void;
   onBack: () => void;
   onOtherLine?: () => void;
 }) {
-  const { opening, line, fens, side, onWatch, onBack, onOtherLine } = props;
+  const { opening, line, fens, side, onBack, onOtherLine } = props;
   const n = line.moves.length;
   const [ply, setPly] = useState(0);
   const [showHints, setShowHints] = useState(false);
@@ -411,8 +421,7 @@ function Try(props: {
 
       <div style={sidePanel}>
         <div>
-          <button onClick={onWatch}>← Watch again</button>
-          <h2 style={{ margin: "8px 0 2px" }}>{opening.name}</h2>
+          <h2 style={{ margin: "0 0 2px" }}>{opening.name}</h2>
           <div style={{ fontSize: 13, opacity: 0.7 }}>
             Try it yourself · {line.name} · move {Math.floor(Math.min(ply, n - 1) / 2) + 1} of {Math.ceil(n / 2)}
           </div>
@@ -432,7 +441,7 @@ function Try(props: {
                 <p style={{ margin: "6px 0 10px" }}>
                   Now try the whole opening again on your own, without hints, to make sure you really know it.
                 </p>
-                <button onClick={() => restart(false)} style={{ fontWeight: 600 }}>
+                <button className="btn-primary" onClick={() => restart(false)}>
                   Try again on my own
                 </button>
               </>
@@ -442,7 +451,7 @@ function Try(props: {
                 <p style={{ margin: "6px 0 10px" }}>You know this line. Try another line or another opening.</p>
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                   <button onClick={() => restart(showHints)}>Play it again</button>
-                  {onOtherLine && <button onClick={onOtherLine}>Next line</button>}
+                  {onOtherLine && <button className="btn-primary" onClick={onOtherLine}>Next line</button>}
                   <button onClick={onBack}>Other openings</button>
                 </div>
               </>
@@ -453,7 +462,7 @@ function Try(props: {
         <MoveList sans={line.moves.slice(0, ply).map((m) => m.san)} maxHeight={140} />
         <CoachPanel notes={notes} maxHeight={260} />
         {!done && (
-          <button onClick={() => restart(showHints)}>Restart from move 1</button>
+          <button className="btn-block" onClick={() => restart(showHints)}>Restart from move 1</button>
         )}
       </div>
     </>

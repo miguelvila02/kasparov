@@ -12,6 +12,7 @@ import {
   HINT_COLOR,
   LAST_MOVE,
   MoveList,
+  NavBar,
   PromotionDialog,
   box,
   createWorker,
@@ -90,6 +91,7 @@ export default function EndgameAcademy({ onExit }: { onExit: () => void }) {
         progress={progress[lesson.id] ?? {}}
         onDone={(run) => markDone(lesson.id, run)}
         onBack={() => setLesson(null)}
+        onHome={onExit}
         onNext={next ? () => setLesson(next) : undefined}
       />
     );
@@ -99,8 +101,9 @@ export default function EndgameAcademy({ onExit }: { onExit: () => void }) {
   const unlocked = (i: number) => i === 0 || !!progress[ENDGAMES[i - 1].id]?.r1;
 
   return (
-    <div style={{ ...page, maxWidth: 760, margin: "2.5rem auto" }}>
-      <button onClick={onExit}>← Menu</button>
+    <>
+    <NavBar trail={[{ label: "Kasparov", onClick: onExit }, { label: "Endgame Academy" }]} />
+    <div style={{ ...page, maxWidth: 760, margin: "2rem auto" }}>
       <h2 style={{ marginBottom: 4 }}>Endgame Academy</h2>
       <p style={{ opacity: 0.7, marginTop: 0 }}>
         In the classical way of teaching chess, students learn endgames early: with few pieces on the board, you see clearly
@@ -116,24 +119,7 @@ export default function EndgameAcademy({ onExit }: { onExit: () => void }) {
                 const p = progress[l.id] ?? {};
                 const open = unlocked(i);
                 return (
-                  <button
-                    key={l.id}
-                    disabled={!open}
-                    onClick={() => setLesson(l)}
-                    style={{
-                      textAlign: "left",
-                      padding: "10px 14px",
-                      borderRadius: 10,
-                      border: "1px solid rgba(128, 128, 128, 0.4)",
-                      background: "transparent",
-                      color: "inherit",
-                      cursor: open ? "pointer" : "not-allowed",
-                      opacity: open ? 1 : 0.5,
-                      display: "flex",
-                      justifyContent: "space-between",
-                      gap: 12,
-                    }}
-                  >
+                  <button key={l.id} className="choice-card row" disabled={!open} onClick={() => setLesson(l)}>
                     <span>
                       <strong>
                         {i + 1}. {l.title}
@@ -151,6 +137,7 @@ export default function EndgameAcademy({ onExit }: { onExit: () => void }) {
         </div>
       ))}
     </div>
+    </>
   );
 }
 
@@ -161,9 +148,10 @@ function LessonView(props: {
   progress: { r1?: boolean; r2?: boolean };
   onDone: (run: Run) => void;
   onBack: () => void;
+  onHome: () => void;
   onNext?: () => void;
 }) {
-  const { lesson, progress, onDone, onBack, onNext } = props;
+  const { lesson, progress, onDone, onBack, onHome, onNext } = props;
   const userSide = lesson.fen.split(" ")[1] as Side;
   const userQueen = userSide === "w" ? "Q" : "q";
   const userRookOrQueen = userSide === "w" ? /[QR]/ : /[qr]/;
@@ -446,6 +434,15 @@ function LessonView(props: {
       : "Your move";
 
   return (
+    <>
+    <NavBar
+      trail={[
+        { label: "Kasparov", onClick: onHome },
+        { label: "Endgame Academy", onClick: onBack },
+        { label: lesson.title },
+      ]}
+      escDisabled={!!pendingPromotion}
+    />
     <div style={gameLayout}>
       <div style={{ position: "relative", width: "min(480px, 100%)" }}>
         <Chessboard
@@ -464,8 +461,7 @@ function LessonView(props: {
 
       <div style={sidePanel}>
         <div>
-          <button onClick={onBack}>← All lessons</button>
-          <div style={{ fontSize: 13, opacity: 0.6, marginTop: 8 }}>
+          <div style={{ fontSize: 13, opacity: 0.6 }}>
             {lesson.level} · Run {run} of 2 {run === 1 ? "(with hints)" : "(on your own)"}
           </div>
           <h2 style={{ margin: "2px 0" }}>{lesson.title}</h2>
@@ -477,17 +473,19 @@ function LessonView(props: {
             <strong>{outcome.text}</strong>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
               {outcome.ok && run === 1 && (
-                <button onClick={() => start(2)} style={{ fontWeight: 600 }}>
+                <button className="btn-primary" onClick={() => start(2)}>
                   Now on your own (run 2) →
                 </button>
               )}
               {outcome.ok && run === 2 && onNext && (
-                <button onClick={onNext} style={{ fontWeight: 600 }}>
+                <button className="btn-primary" onClick={onNext}>
                   Next lesson →
                 </button>
               )}
               {outcome.ok && run === 2 && <span style={{ alignSelf: "center" }}>Lesson mastered! 🎓</span>}
-              <button onClick={() => start(run)}>{outcome.ok ? "Play this run again" : "Try again"}</button>
+              <button className={outcome.ok ? undefined : "btn-primary"} onClick={() => start(run)}>
+                {outcome.ok ? "Play this run again" : "Try again"}
+              </button>
               {!outcome.ok && run === 2 && <button onClick={() => start(1)}>Back to run 1 (with hints)</button>}
             </div>
           </div>
@@ -505,8 +503,13 @@ function LessonView(props: {
 
         <MoveList sans={sans} startsWithBlack={lesson.fen.split(" ")[1] === "b"} maxHeight={120} />
         <CoachPanel notes={notes} maxHeight={260} />
-        {!outcome && <button onClick={() => start(run)}>Restart this run</button>}
+        {!outcome && (
+          <button className="btn-block" onClick={() => start(run)}>
+            Restart this run
+          </button>
+        )}
       </div>
     </div>
+    </>
   );
 }
