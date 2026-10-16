@@ -150,3 +150,8 @@ Changes to the engine can be checked with [fastchess](https://github.com/Disserv
 - Opening names: the [Lichess chess-openings](https://github.com/lichess-org/chess-openings) dataset (CC0).
 - Board component: [react-chessboard](https://github.com/Clariity/react-chessboard).
 - The [Chess Programming Wiki](https://www.chessprogramming.org) was the main reference for the engine techniques.
+
+## License
+
+MIT. See [LICENSE](LICENSE). The PeSTO evaluation values in `engine/src/eval/params.rs`
+come from the Chess Programming Wiki and are under CC BY-SA 3.0.
